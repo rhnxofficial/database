@@ -2,26 +2,21 @@
 
 echo "🚀 Install Nginx Domain Manager..."
 
-# install nginx + certbot kalau belum ada
 apt update -y
 apt install nginx curl certbot python3-certbot-nginx -y
 
 NGINX_AVAILABLE="/etc/nginx/sites-available"
 NGINX_ENABLED="/etc/nginx/sites-enabled"
 
-# ambil IP VPS
-IP=$(curl -s ifconfig.me)
-
 # hapus default biar gak bentrok
 rm -f /etc/nginx/sites-enabled/default
 
-# buat script manager
+# buat command manager
 cat > /usr/local/bin/nginx-manager <<'EOF'
 #!/bin/bash
 
 NGINX_AVAILABLE="/etc/nginx/sites-available"
 NGINX_ENABLED="/etc/nginx/sites-enabled"
-IP=$(curl -s ifconfig.me)
 
 function reload_nginx() {
     nginx -t && systemctl reload nginx
@@ -29,24 +24,35 @@ function reload_nginx() {
 
 function tambah_domain() {
     read -p "Masukkan domain: " domain
-    read -p "Masukkan port backend: " port
+    read -p "Masukkan IP backend (contoh: 45.137.70.24): " ip
+    read -p "Masukkan port backend (contoh: 8003): " port
+
+    read -p "Pakai www juga? (y/n): " pakaiwww
+
+    if [[ $pakaiwww == "y" ]]; then
+        SERVER_NAME="$domain www.$domain"
+        SSL_DOMAIN="-d $domain -d www.$domain"
+    else
+        SERVER_NAME="$domain"
+        SSL_DOMAIN="-d $domain"
+    fi
 
     config="$NGINX_AVAILABLE/$domain"
 
     cat > $config <<EOL
 server {
     listen 80;
-    server_name $domain www.$domain;
+    server_name $SERVER_NAME;
 
     location / {
-        proxy_pass http://$IP:$port;
+        proxy_pass http://$ip:$port;
 
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
         proxy_set_header Host \$host;
 
-        client_max_body_size 25M;
+        client_max_body_size 50M;
     }
 }
 EOL
@@ -56,9 +62,9 @@ EOL
     echo "✅ Domain ditambahkan"
     reload_nginx
 
-    read -p "Pasang SSL? (y/n): " ssl
+    read -p "Pasang SSL Let's Encrypt? (y/n): " ssl
     if [[ $ssl == "y" ]]; then
-        certbot --nginx -d $domain -d www.$domain
+        certbot --nginx $SSL_DOMAIN
     fi
 }
 
@@ -72,19 +78,19 @@ function hapus_domain() {
     rm -f $NGINX_ENABLED/$domain
     rm -f $NGINX_AVAILABLE/$domain
     reload_nginx
-    echo "🗑️ Dihapus"
+    echo "🗑️ Domain dihapus"
 }
 
 function kelola_domain() {
     read -p "Masukkan domain: " domain
 
     echo "a. Pasang SSL"
-    echo "b. Edit config"
+    echo "b. Edit config manual"
     echo "c. Kembali"
     read -p "Pilih: " pilih
 
     case $pilih in
-        a) certbot --nginx -d $domain -d www.$domain ;;
+        a) certbot --nginx -d $domain ;;
         b) nano $NGINX_AVAILABLE/$domain; reload_nginx ;;
     esac
 }
@@ -114,4 +120,4 @@ EOF
 chmod +x /usr/local/bin/nginx-manager
 
 echo "✅ Install selesai!"
-echo "👉 Jalankan dengan: nginx-manager"
+echo "👉 Jalankan: nginx-manager"

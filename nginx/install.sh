@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# cara jalanin nya
+# bash <(curl -s https://raw.githubusercontent.com/rhnxofficial/database/main/nginx/install.sh)
+
 echo "🚀 Install Nginx Domain Manager..."
 
 apt update -y
@@ -8,10 +11,8 @@ apt install nginx curl certbot python3-certbot-nginx -y
 NGINX_AVAILABLE="/etc/nginx/sites-available"
 NGINX_ENABLED="/etc/nginx/sites-enabled"
 
-# hapus default biar gak bentrok
 rm -f /etc/nginx/sites-enabled/default
 
-# buat command manager
 cat > /usr/local/bin/nginx-manager <<'EOF'
 #!/bin/bash
 

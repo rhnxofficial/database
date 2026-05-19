@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Cara jalanin:
+# cara jalanin nya
 # bash <(curl -s https://raw.githubusercontent.com/rhnxofficial/database/main/nginx/install.sh)
 
 set -e
@@ -8,7 +8,7 @@ set -e
 echo "🚀 Install Nginx Domain Manager..."
 
 if [[ $EUID -ne 0 ]]; then
-    echo "❌ Jalankan sebagai root"
+    echo "❌ Jalankan script sebagai root"
     exit 1
 fi
 
@@ -47,7 +47,14 @@ function valid_domain() {
 
 function tambah_domain() {
 
-    read -p "Masukkan domain: " domain
+    echo ""
+    echo "📌 Contoh:"
+    echo "Domain  : example.com"
+    echo "IP      : 45.137.70.24"
+    echo "Port    : 8003"
+    echo ""
+
+    read -p "Masukkan domain (contoh: example.com): " domain
 
     if ! valid_domain "$domain"; then
         echo "❌ Domain tidak valid"
@@ -59,14 +66,14 @@ function tambah_domain() {
         return
     fi
 
-    read -p "Masukkan IP backend: " ip
+    read -p "Masukkan IP backend (contoh: 45.137.70.24): " ip
 
     if ! [[ $ip =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
         echo "❌ Format IP tidak valid"
         return
     fi
 
-    read -p "Masukkan port backend: " port
+    read -p "Masukkan port backend (contoh: 8003): " port
 
     if ! [[ "$port" =~ ^[0-9]+$ ]]; then
         echo "❌ Port tidak valid"
@@ -108,11 +115,16 @@ EOL
 
     ln -sf "$config" "$NGINX_ENABLED/$domain"
 
+    echo ""
     echo "🔄 Reload nginx..."
     reload_nginx
 
     echo ""
     echo "⚠️ Pastikan domain sudah mengarah ke VPS"
+    echo "Contoh A record:"
+    echo "$domain -> IP VPS kamu"
+    echo ""
+
     read -p "Pasang SSL Let's Encrypt? (y/n): " ssl
 
     if [[ $ssl == "y" ]]; then
@@ -121,6 +133,7 @@ EOL
 }
 
 function list_domain() {
+
     echo ""
     echo "===== DOMAIN AKTIF ====="
 
@@ -136,6 +149,11 @@ function list_domain() {
 }
 
 function hapus_domain() {
+
+    echo ""
+    echo "📌 Contoh:"
+    echo "example.com"
+    echo ""
 
     read -p "Domain yang dihapus: " domain
 
@@ -155,10 +173,15 @@ function hapus_domain() {
 
     reload_nginx
 
-    echo "🗑️ Domain dihapus"
+    echo "🗑️ Domain berhasil dihapus"
 }
 
 function kelola_domain() {
+
+    echo ""
+    echo "📌 Contoh:"
+    echo "example.com"
+    echo ""
 
     read -p "Masukkan domain: " domain
 
